@@ -346,6 +346,9 @@
                 <label class="switch"><input type="checkbox" id="toggle-weather"><span class="slider"></span></label>
             </div>
 
+            <button id="geo-btn" style="width:100%;margin-top:8px;padding:8px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:6px;color:var(--input-color);font-family:inherit;font-size:0.85rem;cursor:pointer;">📍 현재 위치 자동 탐색</button>
+            <div id="geo-status" style="font-size:0.75rem;color:var(--label-color);margin-top:4px;text-align:center;min-height:1em;"></div>
+
             <div class="flex-row" style="margin-top:8px;">
                 <label style="flex-shrink:0;">도 (시/도)</label>
                 <select id="weather-province" style="width:60%;"></select>
@@ -846,25 +849,96 @@
             if (!file) return;
 
             const bgVideo = document.getElementById('bg-video');
-            if (bgVideo.src && bgVideo.src.startsWith('blob:')) {
-                URL.revokeObjectURL(bgVideo.src);
+            const nameEl = document.getElementById('video-filename');
+
+            bgVideo.pause();
+            bgVideo.removeEventListener('canplay', bgVideo._onCanPlay || (() => {}));
+
+            if (bgVideo._blobURL) {
+                URL.revokeObjectURL(bgVideo._blobURL);
+                bgVideo._blobURL = null;
             }
 
             bgVideo.removeAttribute('src');
             bgVideo.load();
 
-            const fileURL = URL.createObjectURL(file);
-            bgVideo.src = fileURL;
-            bgVideo.load();
+            const blobURL = URL.createObjectURL(file);
+            bgVideo._blobURL = blobURL;
 
-            const playPromise = bgVideo.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    document.getElementById('video-filename').innerText = '▶ 화면을 클릭하면 재생됩니다.';
+            nameEl.innerText = `📁 ${file.name}`;
+
+            bgVideo._onCanPlay = function onCanPlay() {
+                bgVideo.removeEventListener('canplay', onCanPlay);
+                bgVideo.play().catch(() => {
+                    nameEl.innerText = '▶ 화면을 클릭하면 재생됩니다.';
                 });
+            };
+            bgVideo.addEventListener('canplay', bgVideo._onCanPlay);
+            bgVideo.src = blobURL;
+            bgVideo.load();
+        });
+
+        document.getElementById('geo-btn').addEventListener('click', function() {
+            const statusEl = document.getElementById('geo-status');
+            const key = document.getElementById('weather-key').value.trim();
+
+            if (!key) {
+                statusEl.innerText = 'API Key를 먼저 입력해 주세요.';
+                return;
             }
 
-            document.getElementById('video-filename').innerText = `📁 ${file.name}`;
+            if (!navigator.geolocation) {
+                statusEl.innerText = '이 브라우저는 위치 탐색을 지원하지 않습니다.';
+                return;
+            }
+
+            statusEl.innerText = '📡 위치 탐색 중...';
+
+            navigator.geolocation.getCurrentPosition(
+                async function(pos) {
+                    const { latitude: lat, longitude: lon } = pos.coords;
+                    const unit = document.getElementById('weather-unit').value;
+                    const unitSymbol = unit === 'metric' ? '°C' : '°F';
+                    const weatherBox = document.getElementById('weather');
+
+                    try {
+                        const res = await fetch(
+                            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${key}&units=${unit}`
+                        );
+                        if (!res.ok) throw new Error();
+                        const data = await res.json();
+
+                        statusEl.innerText = `✅ ${data.name} 감지됨`;
+                        setTimeout(() => { statusEl.innerText = ''; }, 3000);
+
+                        if (document.getElementById('toggle-weather').checked) {
+                            weatherBox.style.display = 'block';
+                            weatherBox.innerText = `${data.name} : ${Math.round(data.main.temp)}${unitSymbol} / ${data.weather[0].main}`;
+                        }
+
+                        const cityName = data.name;
+                        const cityOpts = document.getElementById('weather-city').options;
+                        for (let i = 0; i < cityOpts.length; i++) {
+                            if (cityOpts[i].value === cityName) {
+                                cityOpts[i].selected = true;
+                                buildDistrictSelect();
+                                break;
+                            }
+                        }
+                    } catch {
+                        statusEl.innerText = '날씨 조회 실패 (API Key 또는 네트워크 오류)';
+                    }
+                },
+                function(err) {
+                    const msgs = {
+                        1: '위치 권한이 거부되었습니다.',
+                        2: '위치를 확인할 수 없습니다.',
+                        3: '위치 탐색 시간이 초과되었습니다.'
+                    };
+                    statusEl.innerText = msgs[err.code] || '위치 탐색 실패';
+                },
+                { timeout: 10000, maximumAge: 60000 }
+            );
         });
 
         document.getElementById('toggle-greenscreen').addEventListener('change', function(e) {
