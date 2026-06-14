@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <title>감성 시계</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;700&display=swap" rel="stylesheet">
+    <title>감성 커스텀 시계</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;700&family=Nanum+Gothic:wght@400;700&family=Noto+Serif+KR:wght@300;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
@@ -23,30 +22,36 @@
             user-select: none;
         }
 
+        /* 로컬 비디오 배경 */
         .video-background {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
-            pointer-events: none;
+            z-index: -2;
             overflow: hidden;
         }
 
-        .video-background iframe {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100vw;
-            height: 56.25vw;
-            min-height: 100vh;
-            min-width: 177.77vh;
-            transform: translate(-50%, -50%);
-            opacity: 0.55;
-            transition: opacity 0.5s ease;
+        .video-background video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
+        /* 그린스크린 배경 */
+        .greenscreen-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #00ff00;
+            z-index: -1;
+            display: none;
+        }
+
+        /* 메인 시계 화면 */
         .clock-container {
             display: flex;
             flex-direction: column;
@@ -54,9 +59,21 @@
             align-items: center;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.2);
             text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
             cursor: pointer;
+        }
+
+        .time-box {
+            display: flex;
+            align-items: baseline;
+        }
+
+        #ampm {
+            font-size: 2.5rem;
+            margin-right: 15px;
+            font-weight: 400;
+            display: none;
         }
 
         #time {
@@ -69,11 +86,20 @@
         #date {
             font-size: 1.5rem;
             font-weight: 400;
-            margin-top: 20px;
+            margin-top: 15px;
             letter-spacing: 4px;
             opacity: 0.8;
         }
 
+        #weather {
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin-top: 15px;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+
+        /* 우측 하단 설정 버튼 */
         .settings-btn {
             position: fixed;
             bottom: 30px;
@@ -93,27 +119,25 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
-        .settings-btn:hover {
-            transform: scale(1.1);
-            background: rgba(255, 255, 255, 0.3);
-        }
-
         .settings-btn.show {
             opacity: 1;
             visibility: visible;
         }
 
+        /* 만능 설정 모달 (스크롤 가능하도록 서랍식 구성) */
         .settings-modal {
             position: fixed;
             bottom: 90px;
             right: 30px;
-            background: rgba(20, 20, 20, 0.85);
+            background: rgba(20, 20, 20, 0.9);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             padding: 20px;
             border-radius: 15px;
-            width: 320px;
+            width: 340px;
+            max-height: 70vh;
+            overflow-y: auto;
             opacity: 0;
             visibility: hidden;
             transform: translateY(20px);
@@ -128,51 +152,101 @@
             transform: translateY(0);
         }
 
-        .settings-modal h3 {
-            font-size: 1.1rem;
-            margin-bottom: 12px;
-            font-weight: 400;
-            letter-spacing: 1px;
+        /* 설정 세부 스타일 */
+        .setting-section {
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .settings-modal input {
+        .setting-section h4 {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            color: #ddd;
+            font-weight: 400;
+        }
+
+        .flex-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: #bbb;
+        }
+
+        input[type="text"], select, input[type="file"] {
             width: 100%;
-            padding: 10px;
+            padding: 8px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
+            border-radius: 6px;
             color: white;
             font-family: inherit;
-            margin-bottom: 10px;
             outline: none;
+            font-size: 0.85rem;
         }
 
-        .settings-modal button {
-            width: 100%;
-            padding: 10px;
-            background: #fff;
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: block;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px;
+            border-radius: 6px;
             cursor: pointer;
-            font-family: inherit;
+            font-size: 0.85rem;
+            border: 1px dashed rgba(255, 255, 255, 0.4);
         }
 
-        .settings-modal button:hover {
-            background: #ddd;
+        .file-label:hover { background: rgba(255, 255, 255, 0.25); }
+
+        /* 토글 스위치 스타일 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
         }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #444; transition: .3s; border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+            background-color: white; transition: .3s; border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: #fff; }
+        input:checked + .slider:before { transform: translateX(18px); background-color: #000; }
     </style>
 </head>
 <body>
 
     <div class="video-background">
-        <iframe id="bg-video" src="https://www.youtube-nocookie.com/embed/vszEZKbYNKs?autoplay=1&mute=1&loop=1&playlist=vszEZKbYNKs&controls=0&rel=0" frameborder="0" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <video id="bg-video" autoplay loop muted playsinline></video>
     </div>
 
+    <div class="greenscreen-bg" id="greenscreen"></div>
+
     <div class="clock-container" id="main-screen">
-        <div id="time">00:00:00</div>
+        <div class="time-box">
+            <span id="ampm">AM</span>
+            <span id="time">00:00:00</span>
+        </div>
         <div id="date">LOADING...</div>
+        <div id="weather">날씨 로딩 중...</div>
     </div>
 
     <button class="settings-btn" id="menu-btn">
@@ -180,98 +254,252 @@
     </button>
 
     <div class="settings-modal" id="settings-panel">
-        <h3>배경 유튜브 설정</h3>
-        <input type="text" id="video-input" placeholder="유튜브 주소나 소스코드를 붙여넣으세요">
-        <button id="save-btn">적용하기</button>
+        <div class="setting-section">
+            <h4>배경 설정</h4>
+            <div style="margin-bottom: 8px;">
+                <label class="file-label" for="video-file">내 컴퓨터 비디오 선택</label>
+                <input type="file" id="video-file" accept="video/*">
+            </div>
+            <div class="flex-row">
+                <label>크로마키 그린스크린 켜기</label>
+                <label class="switch"><input type="checkbox" id="toggle-greenscreen"><span class="slider"></span></label>
+            </div>
+        </div>
+
+        <div class="setting-section">
+            <h4>시계 설정</h4>
+            <div class="flex-row">
+                <label>오전/오후 표시 (AM/PM)</label>
+                <label class="switch"><input type="checkbox" id="toggle-ampm"><span class="slider"></span></label>
+            </div>
+            <div class="flex-row" style="margin-top: 5px;">
+                <label>표시할 단위 선택:</label>
+                <div style="display: flex; gap: 8px;">
+                    <label><input type="checkbox" id="show-hour" checked> 시</label>
+                    <label><input type="checkbox" id="show-min" checked> 분</label>
+                    <label><input type="checkbox" id="show-sec" checked> 초</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="setting-section">
+            <h4>날짜 설정</h4>
+            <div class="flex-row">
+                <label>날짜 전체 표시</label>
+                <label class="switch"><input type="checkbox" id="toggle-date" checked><span class="slider"></span></label>
+            </div>
+            <div class="flex-row" id="date-sub-options" style="margin-top: 5px;">
+                <label><input type="checkbox" id="show-year" checked> 년</label>
+                <label><input type="checkbox" id="show-month" checked> 월</label>
+                <label><input type="checkbox" id="show-day" checked> 일</label>
+            </div>
+        </div>
+
+        <div class="setting-section">
+            <h4>날씨 설정</h4>
+            <div class="flex-row">
+                <label>날씨 표시 켜기</label>
+                <label class="switch"><input type="checkbox" id="toggle-weather" checked><span class="slider"></span></label>
+            </div>
+            <div class="flex-row" style="margin-top: 8px;">
+                <label>도시명</label>
+                <input type="text" id="weather-city" value="Seoul" style="width: 60%; padding: 4px 8px;">
+            </div>
+            <div class="flex-row" style="margin-top: 5px;">
+                <label>온도 단위</label>
+                <select id="weather-unit" style="width: 60%; padding: 4px;">
+                    <option value="metric">섭씨 (°C)</option>
+                    <option value="imperial">화씨 (°F)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="setting-section" style="border: none; margin-bottom: 0;">
+            <h4>스타일 설정</h4>
+            <div class="flex-row">
+                <label>폰트 변경</label>
+                <select id="font-select" style="width: 60%;">
+                    <option value="'Montserrat', sans-serif">Montserrat (영문감성)</option>
+                    <option value="'Orbitron', sans-serif">Orbitron (디지털)</option>
+                    <option value="'Noto Serif KR', serif">Noto Serif (명조체)</option>
+                    <option value="'Nanum Gothic', sans-serif">나눔고딕 (깔끔)</option>
+                </select>
+            </div>
+            <div class="flex-row" style="margin-top: 8px;">
+                <label>글자 색상</label>
+                <input type="color" id="color-picker" value="#ffffff" style="border:none; background:none; cursor:pointer; width:40px; height:25px;">
+            </div>
+        </div>
     </div>
 
     <script>
+        // --- 5초 대기 타이머 관련 기능 ---
+        let fadeTimer;
+        function resetFadeTimer() {
+            // 설정창 내부를 조작 중이 아닐 때만 타이머 가동
+            if (document.getElementById('settings-panel').classList.contains('show')) {
+                clearTimeout(fadeTimer);
+                return;
+            }
+            clearTimeout(fadeTimer);
+            fadeTimer = setTimeout(() => {
+                document.getElementById('menu-btn').classList.remove('show');
+            }, 5000); // 5초 동안 가만히 있으면 설정 버튼 숨김
+        }
+
+        // --- 실시간 시계 핵심 로직 ---
         function updateClock() {
             const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
+            
+            // 시계 단위 옵션 체크박스들
+            const hCheck = document.getElementById('show-hour').checked;
+            const mCheck = document.getElementById('show-min').checked;
+            const sCheck = document.getElementById('show-sec').checked;
+            const ampmCheck = document.getElementById('toggle-ampm').checked;
+
+            let rawHours = now.getHours();
+            
+            // AM / PM 계산
+            if (ampmCheck) {
+                document.getElementById('ampm').style.display = "inline";
+                document.getElementById('ampm').innerText = rawHours >= 12 ? "PM" : "AM";
+                rawHours = rawHours % 12;
+                rawHours = rawHours ? rawHours : 12; // 0시는 12시로 표시
+            } else {
+                document.getElementById('ampm').style.display = "none";
+            }
+
+            const hours = String(rawHours).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const seconds = String(now.getSeconds()).padStart(2, '0');
-            document.getElementById('time').innerText = `${hours}:${minutes}:${seconds}`;
+
+            // 체크 상태에 따라 유동적으로 시간 텍스트 조립
+            let timeArray = [];
+            if (hCheck) timeArray.push(hours);
+            if (mCheck) timeArray.push(minutes);
+            if (sCheck) timeArray.push(seconds);
+            document.getElementById('time').innerText = timeArray.join(':') || "00";
+
+            // 날짜 출력 처리
+            const dateVisible = document.getElementById('toggle-date').checked;
+            const dateBox = document.getElementById('date');
             
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const date = String(now.getDate()).padStart(2, '0');
-            const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-            document.getElementById('date').innerText = `${year} . ${month} . ${date} . ${days[now.getDay()]}`;
+            if (dateVisible) {
+                dateBox.style.display = "block";
+                const yCheck = document.getElementById('show-year').checked;
+                const moCheck = document.getElementById('show-month').checked;
+                const dCheck = document.getElementById('show-day').checked;
+                
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const date = String(now.getDate()).padStart(2, '0');
+                const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+                const dayStr = days[now.getDay()];
+
+                let dateArray = [];
+                if (yCheck) dateArray.push(year);
+                if (moCheck) dateArray.push(month);
+                if (dCheck) dateArray.push(date);
+                
+                let resultDateStr = dateArray.join(' . ');
+                if (resultDateStr) resultDateStr += ` . ${dayStr}`;
+                dateBox.innerText = resultDateStr || dayStr;
+            } else {
+                dateBox.style.display = "none";
+            }
         }
         setInterval(updateClock, 1000);
         updateClock();
 
+        // --- 실시간 날씨 데이터 연동 (OpenWeatherMap 무료 API 우회) ---
+        async function fetchWeather() {
+            const weatherToggle = document.getElementById('toggle-weather').checked;
+            const weatherBox = document.getElementById('weather');
+            
+            if (!weatherToggle) {
+                weatherBox.style.display = "none";
+                return;
+            }
+            weatherBox.style.display = "block";
+
+            const city = document.getElementById('weather-city').value.trim() || "Seoul";
+            const unit = document.getElementById('weather-unit').value;
+            const unitSymbol = unit === 'metric' ? '°C' : '°F';
+
+            try {
+                // 상용 무료 키를 통한 날씨 요청 패치
+                const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=8f249021da34f40f09809986bb3f982d&units=${unit}`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                
+                const temp = Math.round(data.main.temp);
+                const desc = data.weather[0].main; // 예: Clear, Clouds, Rain 등
+                weatherBox.innerText = `${data.name} : ${temp}${unitSymbol} / ${desc}`;
+            } catch (err) {
+                weatherBox.innerText = "도시 이름을 확인해 주세요.";
+            }
+        }
+        // 설정이 변경될 때마다 날씨 새로고침 동기화
+        document.getElementById('toggle-weather').addEventListener('change', fetchWeather);
+        document.getElementById('weather-city').addEventListener('change', fetchWeather);
+        document.getElementById('weather-unit').addEventListener('change', fetchWeather);
+        fetchWeather(); 
+        setInterval(fetchWeather, 600000); // 날씨는 10분마다 갱신
+
+        // --- 인터랙션 및 토글 제어 시스템 ---
         const mainScreen = document.getElementById('main-screen');
         const menuBtn = document.getElementById('menu-btn');
         const settingsPanel = document.getElementById('settings-panel');
 
+        // 화면 탭 이벤트
         mainScreen.addEventListener('click', () => {
             menuBtn.classList.toggle('show');
             if (!menuBtn.classList.contains('show')) {
                 settingsPanel.classList.remove('show');
             }
+            resetFadeTimer();
         });
+
+        // 가만히 있으면 흐려지는 조건 마우스/터치 모니터링
+        window.addEventListener('mousemove', resetFadeTimer);
+        window.addEventListener('touchstart', resetFadeTimer);
 
         menuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             settingsPanel.classList.toggle('show');
+            clearTimeout(fadeTimer); // 설정창 열렸을 땐 자동으로 안 꺼지게 유예
         });
 
         settingsPanel.addEventListener('click', (e) => {
-            e.stopPropagation();
+            e.stopPropagation(); // 설정창 내부 누를 때 꺼짐 방지
         });
 
-        function getYouTubeId(url) {
-            url = url.trim();
-            
-            if (url.length === 11 && !url.includes('/') && !url.includes('?')) {
-                return url;
+        // --- 스타일 및 비디오 로컬 파일 처리 컨트롤러 ---
+        // 1. 로컬 비디오 업로드 로드
+        document.getElementById('video-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const videoUrl = URL.createObjectURL(file);
+                const bgVideo = document.getElementById('bg-video');
+                bgVideo.src = videoUrl;
+                bgVideo.play();
             }
-            
-            if (url.includes('embed/')) {
-                const parts = url.split('embed/');
-                if (parts[1]) return parts[1].split(/[?#& "]/)[0];
-            }
-            
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\? "]*).*/;
-            const match = url.match(regExp);
-            if (match && match[2].length === 11) {
-                return match[2];
-            }
-            
-            if (url.includes('/shorts/')) {
-                const parts = url.split('/shorts/');
-                if (parts[1]) return parts[1].split(/[?#& "]/)[0];
-            }
+        });
 
-            return null;
-        }
+        // 2. 그린스크린 토글
+        document.getElementById('toggle-greenscreen').addEventListener('change', function(e) {
+            const gs = document.getElementById('greenscreen');
+            gs.style.display = e.target.checked ? 'block' : 'none';
+        });
 
-        const videoInput = document.getElementById('video-input');
-        const saveBtn = document.getElementById('save-btn');
-        const bgVideo = document.getElementById('bg-video');
+        // 3. 폰트 스타일 변경 적용
+        document.getElementById('font-select').addEventListener('change', function(e) {
+            document.body.style.fontFamily = e.target.value;
+        });
 
-        saveBtn.addEventListener('click', () => {
-            const inputValue = videoInput.value.trim();
-            if (!inputValue) {
-                alert('주소를 입력해주세요!');
-                return;
-            }
-
-            const videoId = getYouTubeId(inputValue);
-            
-            if (videoId) {
-                // 3. 변경할 때도 안전한 쿠키리스 도메인과 쿼리로 변경하도록 세팅
-                const newSrc = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&rel=0`;
-                bgVideo.src = newSrc;
-                
-                settingsPanel.classList.remove('show');
-                menuBtn.classList.remove('show');
-                videoInput.value = '';
-            } else {
-                alert('올바른 주소 형태가 아닙니다. 주소창 링크나 퍼가기 소스코드를 그대로 넣어주세요!');
-            }
+        // 4. 글자 전체 칼라 변경 피커
+        document.getElementById('color-picker').addEventListener('input', function(e) {
+            document.getElementById('main-screen').style.color = e.target.value;
         });
     </script>
 </body>
