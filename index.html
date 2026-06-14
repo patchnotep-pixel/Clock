@@ -22,7 +22,6 @@
             user-select: none;
         }
 
-        /* 로컬 비디오 배경 */
         .video-background {
             position: absolute;
             top: 0;
@@ -39,7 +38,6 @@
             object-fit: cover;
         }
 
-        /* 그린스크린 배경 */
         .greenscreen-bg {
             position: absolute;
             top: 0;
@@ -51,7 +49,6 @@
             display: none;
         }
 
-        /* 메인 시계 화면 */
         .clock-container {
             display: flex;
             flex-direction: column;
@@ -99,7 +96,6 @@
             opacity: 0.9;
         }
 
-        /* 우측 하단 설정 버튼 */
         .settings-btn {
             position: fixed;
             bottom: 30px;
@@ -124,7 +120,6 @@
             visibility: visible;
         }
 
-        /* 만능 설정 모달 (스크롤 가능하도록 서랍식 구성) */
         .settings-modal {
             position: fixed;
             bottom: 90px;
@@ -152,7 +147,6 @@
             transform: translateY(0);
         }
 
-        /* 설정 세부 스타일 */
         .setting-section {
             margin-bottom: 18px;
             padding-bottom: 12px;
@@ -208,7 +202,6 @@
 
         .file-label:hover { background: rgba(255, 255, 255, 0.25); }
 
-        /* 토글 스위치 스타일 */
         .switch {
             position: relative;
             display: inline-block;
@@ -246,7 +239,7 @@
             <span id="time">00:00:00</span>
         </div>
         <div id="date">LOADING...</div>
-        <div id="weather">날씨 로딩 중...</div>
+        <div id="weather">날씨 기능을 켜거나 지역을 설정하세요</div>
     </div>
 
     <button class="settings-btn" id="menu-btn">
@@ -257,7 +250,7 @@
         <div class="setting-section">
             <h4>배경 설정</h4>
             <div style="margin-bottom: 8px;">
-                <label class="file-label" for="video-file">내 컴퓨터 비디오 선택</label>
+                <label class="file-label" for="video-file">내 컴퓨터 비디오 선택 (대용량 가능)</label>
                 <input type="file" id="video-file" accept="video/*">
             </div>
             <div class="flex-row">
@@ -296,13 +289,13 @@
         </div>
 
         <div class="setting-section">
-            <h4>날씨 설정</h4>
+            <h4>날씨 설정 (OpenWeather API)</h4>
             <div class="flex-row">
                 <label>날씨 표시 켜기</label>
-                <label class="switch"><input type="checkbox" id="toggle-weather" checked><span class="slider"></span></label>
+                <label class="switch"><input type="checkbox" id="toggle-weather"><span class="slider"></span></label>
             </div>
             <div class="flex-row" style="margin-top: 8px;">
-                <label>도시명</label>
+                <label>도시명 (영문)</label>
                 <input type="text" id="weather-city" value="Seoul" style="width: 60%; padding: 4px 8px;">
             </div>
             <div class="flex-row" style="margin-top: 5px;">
@@ -311,6 +304,10 @@
                     <option value="metric">섭씨 (°C)</option>
                     <option value="imperial">화씨 (°F)</option>
                 </select>
+            </div>
+            <div class="flex-row" style="margin-top: 8px;">
+                <label>개인 API Key 입력</label>
+                <input type="text" id="weather-key" placeholder="개인 키 없으면 비활성화 권장" style="width: 60%; padding: 4px 8px;">
             </div>
         </div>
 
@@ -333,10 +330,8 @@
     </div>
 
     <script>
-        // --- 5초 대기 타이머 관련 기능 ---
         let fadeTimer;
         function resetFadeTimer() {
-            // 설정창 내부를 조작 중이 아닐 때만 타이머 가동
             if (document.getElementById('settings-panel').classList.contains('show')) {
                 clearTimeout(fadeTimer);
                 return;
@@ -344,14 +339,11 @@
             clearTimeout(fadeTimer);
             fadeTimer = setTimeout(() => {
                 document.getElementById('menu-btn').classList.remove('show');
-            }, 5000); // 5초 동안 가만히 있으면 설정 버튼 숨김
+            }, 5000);
         }
 
-        // --- 실시간 시계 핵심 로직 ---
         function updateClock() {
             const now = new Date();
-            
-            // 시계 단위 옵션 체크박스들
             const hCheck = document.getElementById('show-hour').checked;
             const mCheck = document.getElementById('show-min').checked;
             const sCheck = document.getElementById('show-sec').checked;
@@ -359,12 +351,11 @@
 
             let rawHours = now.getHours();
             
-            // AM / PM 계산
             if (ampmCheck) {
                 document.getElementById('ampm').style.display = "inline";
                 document.getElementById('ampm').innerText = rawHours >= 12 ? "PM" : "AM";
                 rawHours = rawHours % 12;
-                rawHours = rawHours ? rawHours : 12; // 0시는 12시로 표시
+                rawHours = rawHours ? rawHours : 12;
             } else {
                 document.getElementById('ampm').style.display = "none";
             }
@@ -373,14 +364,12 @@
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const seconds = String(now.getSeconds()).padStart(2, '0');
 
-            // 체크 상태에 따라 유동적으로 시간 텍스트 조립
             let timeArray = [];
             if (hCheck) timeArray.push(hours);
             if (mCheck) timeArray.push(minutes);
             if (sCheck) timeArray.push(seconds);
             document.getElementById('time').innerText = timeArray.join(':') || "00";
 
-            // 날짜 출력 처리
             const dateVisible = document.getElementById('toggle-date').checked;
             const dateBox = document.getElementById('date');
             
@@ -411,7 +400,6 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // --- 실시간 날씨 데이터 연동 (OpenWeatherMap 무료 API 우회) ---
         async function fetchWeather() {
             const weatherToggle = document.getElementById('toggle-weather').checked;
             const weatherBox = document.getElementById('weather');
@@ -424,34 +412,33 @@
 
             const city = document.getElementById('weather-city').value.trim() || "Seoul";
             const unit = document.getElementById('weather-unit').value;
+            const key = document.getElementById('weather-key').value.trim();
             const unitSymbol = unit === 'metric' ? '°C' : '°F';
 
+            if(!key) {
+                weatherBox.innerText = "설정에서 개인 OpenWeather API Key를 입력해야 작동합니다.";
+                return;
+            }
+
             try {
-                // 상용 무료 키를 통한 날씨 요청 패치
-                const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=8f249021da34f40f09809986bb3f982d&units=${unit}`);
+                const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${key}&units=${unit}`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
-                
                 const temp = Math.round(data.main.temp);
-                const desc = data.weather[0].main; // 예: Clear, Clouds, Rain 등
-                weatherBox.innerText = `${data.name} : ${temp}${unitSymbol} / ${desc}`;
+                weatherBox.innerText = `${data.name} : ${temp}${unitSymbol} / ${data.weather[0].main}`;
             } catch (err) {
-                weatherBox.innerText = "도시 이름을 확인해 주세요.";
+                weatherBox.innerText = "날씨 연동 실패 (도시명 또는 API Key 에러)";
             }
         }
-        // 설정이 변경될 때마다 날씨 새로고침 동기화
         document.getElementById('toggle-weather').addEventListener('change', fetchWeather);
         document.getElementById('weather-city').addEventListener('change', fetchWeather);
         document.getElementById('weather-unit').addEventListener('change', fetchWeather);
-        fetchWeather(); 
-        setInterval(fetchWeather, 600000); // 날씨는 10분마다 갱신
+        document.getElementById('weather-key').addEventListener('change', fetchWeather);
 
-        // --- 인터랙션 및 토글 제어 시스템 ---
         const mainScreen = document.getElementById('main-screen');
         const menuBtn = document.getElementById('menu-btn');
         const settingsPanel = document.getElementById('settings-panel');
 
-        // 화면 탭 이벤트
         mainScreen.addEventListener('click', () => {
             menuBtn.classList.toggle('show');
             if (!menuBtn.classList.contains('show')) {
@@ -460,44 +447,53 @@
             resetFadeTimer();
         });
 
-        // 가만히 있으면 흐려지는 조건 마우스/터치 모니터링
         window.addEventListener('mousemove', resetFadeTimer);
         window.addEventListener('touchstart', resetFadeTimer);
 
         menuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             settingsPanel.classList.toggle('show');
-            clearTimeout(fadeTimer); // 설정창 열렸을 땐 자동으로 안 꺼지게 유예
+            clearTimeout(fadeTimer);
         });
 
         settingsPanel.addEventListener('click', (e) => {
-            e.stopPropagation(); // 설정창 내부 누를 때 꺼짐 방지
+            e.stopPropagation();
         });
 
-        // --- 스타일 및 비디오 로컬 파일 처리 컨트롤러 ---
-        // 1. 로컬 비디오 업로드 로드
+        // 🌟 29분짜리 대용량 1080p 고화질 비디오 로드 최적화 코드 적용
         document.getElementById('video-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                const videoUrl = URL.createObjectURL(file);
+                // 기존 연결 객체 수거(메모리 누수 방지)
                 const bgVideo = document.getElementById('bg-video');
-                bgVideo.src = videoUrl;
-                bgVideo.play();
+                if(bgVideo.src) {
+                    URL.revokeObjectURL(bgVideo.src);
+                }
+
+                // 대용량 파일 가상 Blob 스트리밍 URL 발급 (즉시 로드 및 메모리 절약)
+                const fileURL = URL.createObjectURL(file);
+                bgVideo.src = fileURL;
+                
+                // 브라우저 차단 우회 및 강제 재생 유도
+                bgVideo.load();
+                const playPromise = bgVideo.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log("자동 재생을 위해 화면을 한 번 클릭해 주세요.");
+                    });
+                }
             }
         });
 
-        // 2. 그린스크린 토글
         document.getElementById('toggle-greenscreen').addEventListener('change', function(e) {
-            const gs = document.getElementById('greenscreen');
-            gs.style.display = e.target.checked ? 'block' : 'none';
+            document.getElementById('greenscreen').style.display = e.target.checked ? 'block' : 'none';
         });
 
-        // 3. 폰트 스타일 변경 적용
         document.getElementById('font-select').addEventListener('change', function(e) {
             document.body.style.fontFamily = e.target.value;
         });
 
-        // 4. 글자 전체 칼라 변경 피커
         document.getElementById('color-picker').addEventListener('input', function(e) {
             document.getElementById('main-screen').style.color = e.target.value;
         });
