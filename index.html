@@ -20,6 +20,12 @@
             background-color: #000;
             color: #fff;
             user-select: none;
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+
+        body.light-mode {
+            background-color: #f5f5f5;
+            color: #222;
         }
 
         .video-background {
@@ -56,9 +62,15 @@
             align-items: center;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.3);
             text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
             cursor: pointer;
+            transition: background 0.5s ease, text-shadow 0.5s ease;
+        }
+
+        body.light-mode .clock-container {
+            background: rgba(255, 255, 255, 0.4);
+            text-shadow: 0 4px 20px rgba(255, 255, 255, 0.8);
         }
 
         .time-box {
@@ -104,7 +116,7 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
+            color: inherit;
             padding: 12px;
             border-radius: 50%;
             cursor: pointer;
@@ -113,6 +125,11 @@
             transition: all 0.3s ease;
             z-index: 10;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        body.light-mode .settings-btn {
+            background: rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.2);
         }
 
         .settings-btn.show {
@@ -130,7 +147,7 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
             padding: 20px;
             border-radius: 15px;
-            width: 340px;
+            width: 360px;
             max-height: 70vh;
             overflow-y: auto;
             opacity: 0;
@@ -139,12 +156,13 @@
             transition: all 0.3s ease;
             z-index: 10;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            color: #fff;
         }
 
-        .settings-modal.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
+        body.light-mode .settings-modal {
+            background: rgba(245, 245, 245, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #222;
         }
 
         .setting-section {
@@ -153,11 +171,19 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        body.light-mode .setting-section {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
         .setting-section h4 {
             font-size: 0.95rem;
             margin-bottom: 8px;
             color: #ddd;
-            font-weight: 400;
+            font-weight: 700;
+        }
+
+        body.light-mode .setting-section h4 {
+            color: #333;
         }
 
         .flex-row {
@@ -173,16 +199,30 @@
             color: #bbb;
         }
 
+        body.light-mode label {
+            color: #555;
+        }
+
         input[type="text"], select, input[type="file"] {
             width: 100%;
             padding: 8px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 6px;
-            color: white;
+            color: inherit;
             font-family: inherit;
             outline: none;
             font-size: 0.85rem;
+        }
+
+        body.light-mode input[type="text"], body.light-mode select {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            color: #000;
+        }
+
+        body.light-mode select option {
+            color: #000;
         }
 
         input[type="file"] {
@@ -198,9 +238,17 @@
             cursor: pointer;
             font-size: 0.85rem;
             border: 1px dashed rgba(255, 255, 255, 0.4);
+            color: #fff;
+        }
+
+        body.light-mode .file-label {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px dashed rgba(0, 0, 0, 0.3);
+            color: #333;
         }
 
         .file-label:hover { background: rgba(255, 255, 255, 0.25); }
+        body.light-mode .file-label:hover { background: rgba(0, 0, 0, 0.1); }
 
         .switch {
             position: relative;
@@ -216,13 +264,32 @@
             background-color: #444; transition: .3s; border-radius: 22px;
         }
 
+        body.light-mode .slider {
+            background-color: #ccc;
+        }
+
         .slider:before {
             position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
             background-color: white; transition: .3s; border-radius: 50%;
         }
 
         input:checked + .slider { background-color: #fff; }
+        body.light-mode input:checked + .slider { background-color: #222; }
+        
         input:checked + .slider:before { transform: translateX(18px); background-color: #000; }
+        body.light-mode input:checked + .slider:before { background-color: #fff; }
+
+        .location-selectors {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .location-selectors select {
+            width: 33.3%;
+            padding: 6px;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
@@ -239,7 +306,7 @@
             <span id="time">00:00:00</span>
         </div>
         <div id="date">LOADING...</div>
-        <div id="weather">날씨 기능을 켜거나 지역을 설정하세요</div>
+        <div id="weather">날씨 기능을 켜거나 지역을 설정해 줘</div>
     </div>
 
     <button class="settings-btn" id="menu-btn">
@@ -248,37 +315,37 @@
 
     <div class="settings-modal" id="settings-panel">
         <div class="setting-section">
-            <h4>배경 설정</h4>
-            <div style="margin-bottom: 8px;">
-                <label class="file-label" for="video-file">내 컴퓨터 비디오 선택 (대용량 가능)</label>
-                <input type="file" id="video-file" accept="video/*">
+            <h4>테마 및 배경</h4>
+            <div class="flex-row">
+                <label>라이트 모드 켜기</label>
+                <label class="switch"><input type="checkbox" id="toggle-theme"><span class="slider"></span></label>
+            </div>
+            <div style="margin-top: 10px; margin-bottom: 8px;">
+                <label class="file-label" for="video-file">내 컴퓨터 비디오 선택</label>
+                <input type="file" id="video-file" accept="video/mp4,video/x-m4v,video/*">
             </div>
             <div class="flex-row">
-                <label>크로마키 그린스크린 켜기</label>
+                <label>크로마키 그린스크린</label>
                 <label class="switch"><input type="checkbox" id="toggle-greenscreen"><span class="slider"></span></label>
             </div>
         </div>
 
         <div class="setting-section">
-            <h4>시계 설정</h4>
+            <h4>시계 및 날짜</h4>
             <div class="flex-row">
-                <label>오전/오후 표시 (AM/PM)</label>
+                <label>오전/오후 (AM/PM)</label>
                 <label class="switch"><input type="checkbox" id="toggle-ampm"><span class="slider"></span></label>
             </div>
             <div class="flex-row" style="margin-top: 5px;">
-                <label>표시할 단위 선택:</label>
+                <label>표시 단위:</label>
                 <div style="display: flex; gap: 8px;">
                     <label><input type="checkbox" id="show-hour" checked> 시</label>
                     <label><input type="checkbox" id="show-min" checked> 분</label>
                     <label><input type="checkbox" id="show-sec" checked> 초</label>
                 </div>
             </div>
-        </div>
-
-        <div class="setting-section">
-            <h4>날짜 설정</h4>
-            <div class="flex-row">
-                <label>날짜 전체 표시</label>
+            <div class="flex-row" style="margin-top: 10px;">
+                <label>날짜 표시</label>
                 <label class="switch"><input type="checkbox" id="toggle-date" checked><span class="slider"></span></label>
             </div>
             <div class="flex-row" id="date-sub-options" style="margin-top: 5px;">
@@ -289,16 +356,20 @@
         </div>
 
         <div class="setting-section">
-            <h4>날씨 설정 (OpenWeather API)</h4>
+            <h4>날씨 설정 (OpenWeather)</h4>
             <div class="flex-row">
-                <label>날씨 표시 켜기</label>
+                <label>날씨 켜기</label>
                 <label class="switch"><input type="checkbox" id="toggle-weather"><span class="slider"></span></label>
             </div>
-            <div class="flex-row" style="margin-top: 8px;">
-                <label>도시명 (영문)</label>
-                <input type="text" id="weather-city" value="Seoul" style="width: 60%; padding: 4px 8px;">
+            <div style="margin-top: 8px;">
+                <label>지역 선택</label>
+                <div class="location-selectors">
+                    <select id="sido-select"><option value="">도/시</option></select>
+                    <select id="sigungu-select"><option value="">구/시</option></select>
+                    <select id="dong-select"><option value="">동</option></select>
+                </div>
             </div>
-            <div class="flex-row" style="margin-top: 5px;">
+            <div class="flex-row" style="margin-top: 8px;">
                 <label>온도 단위</label>
                 <select id="weather-unit" style="width: 60%; padding: 4px;">
                     <option value="metric">섭씨 (°C)</option>
@@ -306,20 +377,20 @@
                 </select>
             </div>
             <div class="flex-row" style="margin-top: 8px;">
-                <label>개인 API Key 입력</label>
-                <input type="text" id="weather-key" placeholder="개인 키 없으면 비활성화 권장" style="width: 60%; padding: 4px 8px;">
+                <label>API Key</label>
+                <input type="text" id="weather-key" placeholder="개인 키 입력" style="width: 60%; padding: 4px 8px;">
             </div>
         </div>
 
         <div class="setting-section" style="border: none; margin-bottom: 0;">
-            <h4>스타일 설정</h4>
+            <h4>스타일</h4>
             <div class="flex-row">
-                <label>폰트 변경</label>
-                <select id="font-select" style="width: 60%;">
-                    <option value="'Montserrat', sans-serif">Montserrat (영문감성)</option>
-                    <option value="'Orbitron', sans-serif">Orbitron (디지털)</option>
-                    <option value="'Noto Serif KR', serif">Noto Serif (명조체)</option>
-                    <option value="'Nanum Gothic', sans-serif">나눔고딕 (깔끔)</option>
+                <label>폰트</label>
+                <select id="font-select" style="width: 70%;">
+                    <option value="'Montserrat', sans-serif">Montserrat</option>
+                    <option value="'Orbitron', sans-serif">Orbitron</option>
+                    <option value="'Noto Serif KR', serif">Noto Serif KR</option>
+                    <option value="'Nanum Gothic', sans-serif">Nanum Gothic</option>
                 </select>
             </div>
             <div class="flex-row" style="margin-top: 8px;">
@@ -330,6 +401,76 @@
     </div>
 
     <script>
+        const locationData = {
+            "서울특별시": {
+                "강남구": ["역삼동", "논현동", "삼성동"],
+                "서초구": ["서초동", "반포동", "방배동"],
+                "종로구": ["종로1가", "삼청동", "혜화동"]
+            },
+            "경기도": {
+                "수원시": ["영통동", "매탄동", "광교동", "권선동"],
+                "성남시": ["분당동", "판교동", "정자동"],
+                "용인시": ["수지구", "기흥구", "처인구"]
+            },
+            "부산광역시": {
+                "해운대구": ["우동", "좌동", "반여동"],
+                "수영구": ["남천동", "광안동", "민락동"]
+            }
+        };
+
+        const weatherCityMap = {
+            "서울특별시": "Seoul",
+            "경기도": {
+                "수원시": "Suwon",
+                "성남시": "Seongnam",
+                "용인시": "Yongin"
+            },
+            "부산광역시": "Busan"
+        };
+
+        const sidoSelect = document.getElementById('sido-select');
+        const sigunguSelect = document.getElementById('sigungu-select');
+        const dongSelect = document.getElementById('dong-select');
+
+        for (const sido in locationData) {
+            const option = document.createElement('option');
+            option.value = sido;
+            option.textContent = sido;
+            sidoSelect.appendChild(option);
+        }
+
+        sidoSelect.addEventListener('change', function() {
+            sigunguSelect.innerHTML = '<option value="">구/시</option>';
+            dongSelect.innerHTML = '<option value="">동</option>';
+            const selectedSido = this.value;
+            if (locationData[selectedSido]) {
+                for (const sigungu in locationData[selectedSido]) {
+                    const option = document.createElement('option');
+                    option.value = sigungu;
+                    option.textContent = sigungu;
+                    sigunguSelect.appendChild(option);
+                }
+            }
+            fetchWeather();
+        });
+
+        sigunguSelect.addEventListener('change', function() {
+            dongSelect.innerHTML = '<option value="">동</option>';
+            const selectedSido = sidoSelect.value;
+            const selectedSigungu = this.value;
+            if (locationData[selectedSido] && locationData[selectedSido][selectedSigungu]) {
+                locationData[selectedSido][selectedSigungu].forEach(dong => {
+                    const option = document.createElement('option');
+                    option.value = dong;
+                    option.textContent = dong;
+                    dongSelect.appendChild(option);
+                });
+            }
+            fetchWeather();
+        });
+
+        dongSelect.addEventListener('change', fetchWeather);
+
         let fadeTimer;
         function resetFadeTimer() {
             if (document.getElementById('settings-panel').classList.contains('show')) {
@@ -410,28 +551,39 @@
             }
             weatherBox.style.display = "block";
 
-            const city = document.getElementById('weather-city').value.trim() || "Seoul";
+            const sido = sidoSelect.value;
+            const sigungu = sigunguSelect.value;
+            let queryCity = "Seoul"; 
+
+            if (sido) {
+                if (typeof weatherCityMap[sido] === 'string') {
+                    queryCity = weatherCityMap[sido];
+                } else if (typeof weatherCityMap[sido] === 'object' && sigungu) {
+                    queryCity = weatherCityMap[sido][sigungu] || "Seoul";
+                }
+            }
+
             const unit = document.getElementById('weather-unit').value;
             const key = document.getElementById('weather-key').value.trim();
             const unitSymbol = unit === 'metric' ? '°C' : '°F';
 
             if(!key) {
-                weatherBox.innerText = "설정에서 개인 OpenWeather API Key를 입력해야 작동합니다.";
+                weatherBox.innerText = "설정에서 API Key를 입력해 줘";
                 return;
             }
 
             try {
-                const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${key}&units=${unit}`);
+                const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${queryCity}&appid=${key}&units=${unit}`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 const temp = Math.round(data.main.temp);
-                weatherBox.innerText = `${data.name} : ${temp}${unitSymbol} / ${data.weather[0].main}`;
+                let displayLocation = dongSelect.value || sigungu || sido || data.name;
+                weatherBox.innerText = `${displayLocation} : ${temp}${unitSymbol} / ${data.weather[0].main}`;
             } catch (err) {
-                weatherBox.innerText = "날씨 연동 실패 (도시명 또는 API Key 에러)";
+                weatherBox.innerText = "날씨 연동 실패";
             }
         }
         document.getElementById('toggle-weather').addEventListener('change', fetchWeather);
-        document.getElementById('weather-city').addEventListener('change', fetchWeather);
         document.getElementById('weather-unit').addEventListener('change', fetchWeather);
         document.getElementById('weather-key').addEventListener('change', fetchWeather);
 
@@ -460,29 +612,37 @@
             e.stopPropagation();
         });
 
-        // 🌟 29분짜리 대용량 1080p 고화질 비디오 로드 최적화 코드 적용
         document.getElementById('video-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (file) {
-                // 기존 연결 객체 수거(메모리 누수 방지)
-                const bgVideo = document.getElementById('bg-video');
-                if(bgVideo.src) {
-                    URL.revokeObjectURL(bgVideo.src);
-                }
+            if (!file) return;
 
-                // 대용량 파일 가상 Blob 스트리밍 URL 발급 (즉시 로드 및 메모리 절약)
+            const bgVideo = document.getElementById('bg-video');
+            
+            if(bgVideo.src) {
+                URL.revokeObjectURL(bgVideo.src);
+                bgVideo.removeAttribute('src');
+                bgVideo.load();
+            }
+
+            try {
                 const fileURL = URL.createObjectURL(file);
                 bgVideo.src = fileURL;
                 
-                // 브라우저 차단 우회 및 강제 재생 유도
-                bgVideo.load();
-                const playPromise = bgVideo.play();
-                
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.log("자동 재생을 위해 화면을 한 번 클릭해 주세요.");
+                bgVideo.onloadeddata = () => {
+                    bgVideo.play().catch(err => {
+                        console.error(err);
                     });
-                }
+                };
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        document.getElementById('toggle-theme').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                document.body.classList.add('light-mode');
+            } else {
+                document.body.classList.remove('light-mode');
             }
         });
 
