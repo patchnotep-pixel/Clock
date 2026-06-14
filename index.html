@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>감성 시계</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Montserrat', sans-serif;
+            background-color: #000;
+            color: #fff;
+            user-select: none;
+        }
+
+        .video-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .video-background iframe {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 56.25vw;
+            min-height: 100vh;
+            min-width: 177.77vh;
+            transform: translate(-50%, -50%);
+            opacity: 0.55;
+            transition: opacity 0.5s ease;
+        }
+
+        .clock-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.25);
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+        }
+
+        #time {
+            font-size: 8rem;
+            font-weight: 200;
+            letter-spacing: -2px;
+            line-height: 1;
+        }
+
+        #date {
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin-top: 20px;
+            letter-spacing: 4px;
+            opacity: 0.8;
+        }
+
+        .settings-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .settings-btn:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .settings-btn.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .settings-modal {
+            position: fixed;
+            bottom: 90px;
+            right: 30px;
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 15px;
+            width: 320px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .settings-modal.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .settings-modal h3 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .settings-modal input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            margin-bottom: 10px;
+            outline: none;
+        }
+
+        .settings-modal button {
+            width: 100%;
+            padding: 10px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .settings-modal button:hover {
+            background: #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="video-background">
+        <iframe id="bg-video" src="https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1&mute=1&loop=1&playlist=5qap5aO4i9A&controls=0&rel=0" frameborder="0" allow="autoplay; encrypted-media"></iframe>
+    </div>
+
+    <div class="clock-container" id="main-screen">
+        <div id="time">00:00:00</div>
+        <div id="date">LOADING...</div>
+    </div>
+
+    <button class="settings-btn" id="menu-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </button>
+
+    <div class="settings-modal" id="settings-panel">
+        <h3>배경 유튜브 설정</h3>
+        <input type="text" id="video-input" placeholder="유튜브 주소 전체를 붙여넣으세요">
+        <button id="save-btn">적용하기</button>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('time').innerText = `${hours}:${minutes}:${seconds}`;
+            
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            document.getElementById('date').innerText = `${year} . ${month} . ${date} . ${days[now.getDay()]}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        const mainScreen = document.getElementById('main-screen');
+        const menuBtn = document.getElementById('menu-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+
+        mainScreen.addEventListener('click', () => {
+            menuBtn.classList.toggle('show');
+            if (!menuBtn.classList.contains('show')) {
+                settingsPanel.classList.remove('show');
+            }
+        });
+
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsPanel.classList.toggle('show');
+        });
+
+        settingsPanel.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        function getYouTubeId(url) {
+            url = url.trim();
+            if (url.length === 11 && !url.includes('/') && !url.includes('?')) {
+                return url;
+            }
+            
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            
+            if (match && match[2].length === 11) {
+                return match[2];
+            }
+            
+            if (url.includes('/shorts/')) {
+                const parts = url.split('/shorts/');
+                if (parts[1]) return parts[1].split(/[?#&]/)[0];
+            }
+
+            return null;
+        }
+
+        const videoInput = document.getElementById('video-input');
+        const saveBtn = document.getElementById('save-btn');
+        const bgVideo = document.getElementById('bg-video');
+
+        saveBtn.addEventListener('click', () => {
+            const inputValue = videoInput.value.trim();
+            if (!inputValue) {
+                alert('주소를 입력해주세요!');
+                return;
+            }
+
+            const videoId = getYouTubeId(inputValue);
+            
+            if (videoId) {
+                const newSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&rel=0`;
+                bgVideo.src = newSrc;
+                
+                settingsPanel.classList.remove('show');
+                menuBtn.classList.remove('show');
+                videoInput.value = '';
+            } else {
+                alert('올바른 유튜브 주소가 아닙니다. 주소창의 링크를 그대로 복사해서 넣어주세요!');
+            }
+        });
+    </script>
+</body>
+</html>
