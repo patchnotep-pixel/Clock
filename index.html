@@ -166,7 +166,7 @@
 <body>
 
     <div class="video-background">
-        <iframe id="bg-video" src="https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1&mute=1&loop=1&playlist=5qap5aO4i9A&controls=0&rel=0" frameborder="0" allow="autoplay; encrypted-media"></iframe>
+        <iframe id="bg-video" src="https://www.youtube.com/embed/vszEZKbYNKs?autoplay=1&mute=1&loop=1&playlist=vszEZKbYNKs&controls=0&rel=0" frameborder="0" allow="autoplay; encrypted-media"></iframe>
     </div>
 
     <div class="clock-container" id="main-screen">
@@ -180,7 +180,7 @@
 
     <div class="settings-modal" id="settings-panel">
         <h3>배경 유튜브 설정</h3>
-        <input type="text" id="video-input" placeholder="유튜브 주소 전체를 붙여넣으세요">
+        <input type="text" id="video-input" placeholder="유튜브 주소나 소스코드를 붙여넣으세요">
         <button id="save-btn">적용하기</button>
     </div>
 
@@ -223,20 +223,25 @@
 
         function getYouTubeId(url) {
             url = url.trim();
+            
             if (url.length === 11 && !url.includes('/') && !url.includes('?')) {
                 return url;
             }
             
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
+            if (url.includes('embed/')) {
+                const parts = url.split('embed/');
+                if (parts[1]) return parts[1].split(/[?#& "]/)[0];
+            }
             
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\? "]*).*/;
+            const match = url.match(regExp);
             if (match && match[2].length === 11) {
                 return match[2];
             }
             
             if (url.includes('/shorts/')) {
                 const parts = url.split('/shorts/');
-                if (parts[1]) return parts[1].split(/[?#&]/)[0];
+                if (parts[1]) return parts[1].split(/[?#& "]/)[0];
             }
 
             return null;
@@ -263,7 +268,7 @@
                 menuBtn.classList.remove('show');
                 videoInput.value = '';
             } else {
-                alert('올바른 유튜브 주소가 아닙니다. 주소창의 링크를 그대로 복사해서 넣어주세요!');
+                alert('올바른 주소 형태가 아닙니다. 주소창 링크나 퍼가기 소스코드를 그대로 넣어주세요!');
             }
         });
     </script>
