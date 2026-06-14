@@ -276,7 +276,11 @@
 </head>
 <body>
     <div class="video-background">
-        <video id="bg-video" autoplay loop muted playsinline></video>
+        <video id="bg-video" autoplay loop muted playsinline>
+            <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm" type="video/webm">
+            <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
+            당신의 브라우저는 동영상을 지원하지 않습니다.
+        </video>
     </div>
 
     <div class="greenscreen-bg" id="greenscreen"></div>
@@ -786,6 +790,17 @@
         setInterval(updateClock, 1000);
         updateClock();
 
+        const bgVideo = document.getElementById('bg-video');
+        bgVideo.muted = true;
+        bgVideo.loop = true;
+        bgVideo.playsInline = true;
+        bgVideo.addEventListener('error', () => {
+            console.warn('Background video error', bgVideo.error);
+        });
+        bgVideo.play().catch(() => {
+            // Autoplay may be blocked; user can still click to play.
+        });
+
         function mapWeatherCode(code) {
             const WEATHER_CODES = {
                 0: 'Clear',
@@ -895,7 +910,14 @@
             const nameEl = document.getElementById('video-filename');
 
             bgVideo.pause();
-            bgVideo.removeEventListener('canplay', bgVideo._onCanPlay || (() => {}));
+            if (bgVideo._onCanPlay) {
+                bgVideo.removeEventListener('canplay', bgVideo._onCanPlay);
+                bgVideo._onCanPlay = null;
+            }
+            if (bgVideo._onError) {
+                bgVideo.removeEventListener('error', bgVideo._onError);
+                bgVideo._onError = null;
+            }
 
             if (bgVideo._blobURL) {
                 URL.revokeObjectURL(bgVideo._blobURL);
@@ -903,6 +925,7 @@
             }
 
             bgVideo.removeAttribute('src');
+            Array.from(bgVideo.querySelectorAll('source')).forEach(source => source.remove());
             bgVideo.load();
 
             const blobURL = URL.createObjectURL(file);
@@ -911,14 +934,26 @@
             nameEl.innerText = `📁 ${file.name}`;
 
             bgVideo._onCanPlay = function onCanPlay() {
-                bgVideo.removeEventListener('canplay', onCanPlay);
+                bgVideo.removeEventListener('canplay', bgVideo._onCanPlay);
+                bgVideo._onCanPlay = null;
                 bgVideo.play().catch(() => {
                     nameEl.innerText = '▶ 화면을 클릭하면 재생됩니다.';
                 });
             };
+
+            bgVideo._onError = function onError() {
+                bgVideo.removeEventListener('error', bgVideo._onError);
+                bgVideo._onError = null;
+                nameEl.innerText = '⚠️ 이 동영상 형식은 재생할 수 없습니다.';
+            };
+
             bgVideo.addEventListener('canplay', bgVideo._onCanPlay);
+            bgVideo.addEventListener('error', bgVideo._onError);
             bgVideo.src = blobURL;
             bgVideo.load();
+            bgVideo.play().catch(() => {
+                nameEl.innerText = '▶ 화면을 클릭하면 재생됩니다.';
+            });
         });
 
         document.getElementById('geo-btn').addEventListener('click', function() {
